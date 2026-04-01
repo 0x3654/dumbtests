@@ -10,12 +10,6 @@ const STEPS = [
   "Делаю выводы....",
 ]
 
-const SUGGESTED = [
-  "0x3654", "minilubov", "maxjazzz", "tomnaya_satana",
-  "fieva9", "leni_kotik", "twitshama", "luxurybitches",
-  "nysaaash", "homa_sapiens_", "dcversus", "Irochka_x",
-  "vse_potom1", "iraclorny", "aloemusic", "__xanushka",
-]
 
 type UserInfo = { name: string; screen_name: string; bio: string; followers: number; avatar: string }
 
@@ -194,14 +188,6 @@ function AnalyzerInner() {
     router.replace("/analyzer", { scroll: false })
   }
 
-  function handleSuggestion(name: string) {
-    pollingActive.current = false
-    stopStepAnimation()
-    setUsername(name)
-    setProfileChecked(false)
-    setState({ phase: "idle" })
-    runAnalysis(name.toLowerCase())
-  }
 
   async function copyVerdict(text: string) {
     await navigator.clipboard.writeText(text)
@@ -291,18 +277,6 @@ function AnalyzerInner() {
           Введи ник — получишь неопровержимый ответ. Анализирует последние 20 твитов, смотрит картинки, использует ИИ. Не рандом. Всё честно.
         </p>
 
-        <div className="suggested">
-          {SUGGESTED.map((name) => (
-            <button
-              key={name}
-              className="suggested-btn"
-              onClick={() => handleSuggestion(name)}
-              disabled={state.phase === "queue" || state.phase === "processing"}
-            >
-              @{name}
-            </button>
-          ))}
-        </div>
 
         {showForm && (
           <form onSubmit={handleSubmit} className="form">

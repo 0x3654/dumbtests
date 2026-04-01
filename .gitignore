@@ -2,6 +2,7 @@
 tweet_data/
 node_modules/
 .next/
+.lock
 __pycache__/
 *.pyc
 CLAUDE_CONTEXT.md

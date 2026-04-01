@@ -31,8 +31,6 @@ jobs:
           platforms: linux/amd64
           load: true
           tags: ${{ env.DOCKER_IMAGE }}:test
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
-          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
       - name: Test container
         run: |

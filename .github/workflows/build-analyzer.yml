@@ -15,48 +15,35 @@ env:
   DOCKER_TAG: ${{ github.sha }}
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          platforms: ${{ matrix.platform }}
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build image (local only, not pushed yet)
+      - name: Build amd64 image for testing
         uses: docker/build-push-action@v5
         with:
           context: ./src/analyzer
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64
           load: true
-          tags: ${{ env.DOCKER_IMAGE }}:test-${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
+          tags: ${{ env.DOCKER_IMAGE }}:test
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
-      - name: Test amd64 container
-        if: matrix.platform == 'linux/amd64'
+      - name: Test container
         run: |
-          echo "=== Testing amd64 container ==="
           docker run -d --name analyzer-test -p 8001:8001 \
             -e REDIS_URL=redis://localhost:6379 \
             -e AI_API_KEY=test \
-            ${{ env.DOCKER_IMAGE }}:test-amd64
+            ${{ env.DOCKER_IMAGE }}:test
 
           for i in {1..30}; do
-            if docker ps | grep -q "analyzer-test.*healthy"; then
-              echo "Container is healthy!"
+            if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
+              echo "Container is up!"
               break
             fi
             sleep 2
@@ -71,58 +58,16 @@ jobs:
           docker stop analyzer-test
           docker rm analyzer-test
 
-      - name: Set up QEMU (for arm64 testing)
-        if: matrix.platform == 'linux/arm64'
-        uses: docker/setup-qemu-action@v3
-
-      - name: Test arm64 container (emulation)
-        if: matrix.platform == 'linux/arm64'
-        run: |
-          echo "=== Testing arm64 container (with emulation) ==="
-          docker run -d --name analyzer-test-arm --platform linux/arm64 -p 8002:8001 \
-            -e REDIS_URL=redis://localhost:6379 \
-            -e AI_API_KEY=test \
-            ${{ env.DOCKER_IMAGE }}:test-arm64
-
-          echo "Waiting for arm64 container (emulation is slow)..."
-          sleep 30
-
-          echo "=== Container logs ==="
-          docker logs analyzer-test-arm || true
-
-          if docker ps | grep -q "analyzer-test-arm"; then
-            echo "arm64 container is running"
-          else
-            echo "arm64 container failed to start"
-            docker logs analyzer-test-arm || true
-            exit 1
-          fi
-
-          docker stop analyzer-test-arm
-          docker rm analyzer-test-arm
-
-      - name: Tag and push (only if tests passed)
-        if: success()
-        run: |
-          ARCH=${{ matrix.platform == 'linux/amd64' && 'amd64' || 'arm64' }}
-          docker tag ${{ env.DOCKER_IMAGE }}:test-${ARCH} ${{ env.DOCKER_IMAGE }}:latest-${ARCH}
-          docker tag ${{ env.DOCKER_IMAGE }}:test-${ARCH} ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}-${ARCH}
-          docker push ${{ env.DOCKER_IMAGE }}:latest-${ARCH}
-          docker push ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}-${ARCH}
-
-      - name: Cleanup on failure
-        if: failure()
-        run: |
-          echo "Tests failed, not pushing to Docker Hub"
-          docker stop analyzer-test || true
-          docker rm analyzer-test || true
-          docker stop analyzer-test-arm || true
-          docker rm analyzer-test-arm || true
-
-  merge-manifests:
-    needs: build
+  build:
+    needs: test
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -132,18 +77,14 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Create multi-arch manifest
-        run: |
-          docker buildx imagetools create \
-            --tag ${{ env.DOCKER_IMAGE }}:latest \
-            ${{ env.DOCKER_IMAGE }}:latest-amd64 \
-            ${{ env.DOCKER_IMAGE }}:latest-arm64
-
-          docker buildx imagetools create \
-            --tag ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }} \
-            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}-amd64 \
-            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}-arm64
-
-          echo "Multi-arch manifests created"
-          echo "  - ${{ env.DOCKER_IMAGE }}:latest (amd64 + arm64)"
-          echo "  - ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }} (amd64 + arm64)"
+      - name: Build and push multi-arch
+        uses: docker/build-push-action@v5
+        with:
+          context: ./src/analyzer
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:latest
+            ${{ env.DOCKER_IMAGE }}:${{ env.DOCKER_TAG }}
+          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max

@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+
 const STEPS = [
   "Читаю твиты...",
   "Изучаю картинки...",
@@ -68,7 +70,7 @@ function AnalyzerInner() {
     let userInfo = prefetchedUser
     if (!userInfo) {
       try {
-        const r = await fetch(`/api/user/${encodeURIComponent(name)}`)
+        const r = await fetch(`${BASE}/api/user/${encodeURIComponent(name)}`)
         const d = await r.json()
         if (d.found) userInfo = d
       } catch {}
@@ -78,7 +80,7 @@ function AnalyzerInner() {
     }
 
     try {
-      const res = await fetch(`/api/analyze?username=${encodeURIComponent(name)}`)
+      const res = await fetch(`${BASE}/api/analyze?username=${encodeURIComponent(name)}`)
       const data = await res.json()
 
       if (!res.ok) {
@@ -103,7 +105,7 @@ function AnalyzerInner() {
         await new Promise((r) => setTimeout(r, 2000))
         if (!pollingActive.current) break
 
-        const statusRes = await fetch(`/api/status/${jobId}`)
+        const statusRes = await fetch(`${BASE}/api/status/${jobId}`)
         const status = await statusRes.json()
 
         if (status.status === "done") {
@@ -135,7 +137,7 @@ function AnalyzerInner() {
   }, [router])
 
   useEffect(() => {
-    fetch("/api/health").then(r => r.json()).then(d => setApiStatus(d.status)).catch(() => setApiStatus("unavailable"))
+    fetch(`${BASE}/api/health`).then(r => r.json()).then(d => setApiStatus(d.status)).catch(() => setApiStatus("unavailable"))
   }, [])
 
   useEffect(() => {
@@ -163,7 +165,7 @@ function AnalyzerInner() {
       // Первый клик - проверяем профиль
       setState({ phase: "confirming", user: { name: "", screen_name: name, bio: "", followers: 0, avatar: "" } })
       try {
-        const res = await fetch(`/api/user/${encodeURIComponent(name)}`)
+        const res = await fetch(`${BASE}/api/user/${encodeURIComponent(name)}`)
         const data = await res.json()
         if (!data.found) {
           setState({ phase: "error", message: "Аккаунт не найден или закрытый." })
@@ -197,7 +199,7 @@ function AnalyzerInner() {
 
   async function fetchOgBlob(username: string): Promise<Blob | null> {
     try {
-      const res = await fetch(`/api/og/${encodeURIComponent(username)}`)
+      const res = await fetch(`${BASE}/api/og/${encodeURIComponent(username)}`)
       if (!res.ok) return null
       return await res.blob()
     } catch {
@@ -258,7 +260,7 @@ function AnalyzerInner() {
 
         <header className="header">
           <a href="https://0x3654.com/toporbottom" className="mono dim" style={{ textDecoration: "none" }}>настоящий анализ</a>
-          <a href="https://0x3654.com/toporbottom" className="mono dim" style={{ textDecoration: "none" }}>2026</a>
+          <span className="mono dim">2026</span>
         </header>
 
         {apiStatus !== "ok" && apiStatus !== "unknown" && (
@@ -385,7 +387,7 @@ function AnalyzerInner() {
 
         <footer className="footer">
           <span className="mono dim">© 2026</span>
-          <a href="https://github.com/0x3654/" target="_blank" rel="noopener noreferrer" className="mono dim" style={{ textDecoration: "none" }}>opensource</a>
+          <a href="https://github.com/0x3654/dumbtests" target="_blank" rel="noopener noreferrer" className="mono dim" style={{ textDecoration: "none" }}>opensource</a>
           <span className="mono dim">не связан с x/twitter</span>
         </footer>
       </div>

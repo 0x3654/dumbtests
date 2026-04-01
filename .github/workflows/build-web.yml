@@ -52,7 +52,7 @@ jobs:
           echo "=== Container logs ==="
           docker logs topbottom-test
 
-          curl -f http://localhost:3000/api/health || exit 1
+          curl -f http://localhost:3000/topbottom/api/health || exit 1
           echo "Health endpoint OK"
 
           docker stop topbottom-test

@@ -3,7 +3,7 @@ services:
     container_name: topbottom
     image: docker.io/0x3654/topbottom:latest
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000"
     env_file:
       - .env
     environment:
@@ -12,6 +12,8 @@ services:
     depends_on:
       - analyzer
       - redis
+    networks:
+      - backend
 
   analyzer:
     container_name: analyzer
@@ -25,6 +27,8 @@ services:
       - redis
     volumes:
       - ./tweet_data:/data
+    networks:
+      - backend
 
   redis:
     container_name: redis
@@ -32,6 +36,8 @@ services:
     restart: always
     volumes:
       - redis_data:/data
+    networks:
+      - backend
 
 networks:
   backend:

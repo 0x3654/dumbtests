@@ -1,9 +1,10 @@
 import asyncio
+import os
 import re
 import uuid
 import httpx
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from twitter import get_user, get_tweets
@@ -13,12 +14,20 @@ import store
 
 app = FastAPI()
 
+_ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("CORS_ORIGINS", "https://0x3654.com").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_methods=["GET", "DELETE"],
     allow_headers=["*"],
 )
+
+
+def _require_admin(x_admin_key: str | None):
+    admin_key = os.environ.get("ADMIN_KEY")
+    if not admin_key or x_admin_key != admin_key:
+        raise HTTPException(403, "forbidden")
 
 # Очередь и хранилище результатов
 job_queue: asyncio.Queue = asyncio.Queue()
@@ -144,14 +153,14 @@ async def status(job_id: str):
 # ── Debug эндпоинты ────────────────────────────────────────────────────────
 
 @app.get("/debug")
-async def debug_list():
-    """Список всех закэшированных аккаунтов с возрастом файла."""
+async def debug_list(x_admin_key: str | None = Header(default=None)):
+    _require_admin(x_admin_key)
     return {"cached": store.list_cached()}
 
 
 @app.get("/debug/{username}")
-async def debug_username(username: str):
-    """Сырые данные из файлового кэша (твиты + описания картинок)."""
+async def debug_username(username: str, x_admin_key: str | None = Header(default=None)):
+    _require_admin(x_admin_key)
     username = username.lstrip("@").lower().strip()
     data = store.load_any(username)
     if not data:
@@ -160,11 +169,8 @@ async def debug_username(username: str):
 
 
 @app.delete("/cache/{username}")
-async def clear_verdict_cache(username: str):
-    """
-    Удалить Redis-кэш вердикта. Файловый кэш твитов остаётся.
-    Следующий /analyze пересчитает вердикт без fetch из Twitter.
-    """
+async def clear_verdict_cache(username: str, x_admin_key: str | None = Header(default=None)):
+    _require_admin(x_admin_key)
     username = username.lstrip("@").lower().strip()
     if not re.fullmatch(r"[a-z0-9_]{1,15}", username):
         raise HTTPException(400, "invalid username")

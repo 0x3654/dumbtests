@@ -38,8 +38,6 @@ function AnalyzerInner() {
   const [username, setUsername] = useState(searchParams.get("u") ?? "")
   const [state, setState] = useState<State>({ phase: "idle" })
   const [apiStatus, setApiStatus] = useState<"ok" | "no_funds" | "no_key" | "unavailable" | "unknown">("unknown")
-  const [copiedVerdict, setCopiedVerdict] = useState(false)
-  const [sharingImage, setSharingImage] = useState(false)
   const [profileChecked, setProfileChecked] = useState(false)
   const stepTimer = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollingActive = useRef(false)
@@ -191,63 +189,7 @@ function AnalyzerInner() {
   }
 
 
-  async function copyVerdict(text: string) {
-    await navigator.clipboard.writeText(text)
-    setCopiedVerdict(true)
-    setTimeout(() => setCopiedVerdict(false), 2000)
-  }
-
-  async function fetchOgBlob(username: string): Promise<Blob | null> {
-    try {
-      const res = await fetch(`${BASE}/api/og/${encodeURIComponent(username)}`)
-      if (!res.ok) return null
-      return await res.blob()
-    } catch {
-      return null
-    }
-  }
-
-  async function saveImage() {
-    if (state.phase !== "done") return
-    setSharingImage(true)
-    try {
-      const blob = await fetchOgBlob(state.user.screen_name)
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `topbottom-${state.user.screen_name}.png`
-        a.click()
-        URL.revokeObjectURL(url)
-      }
-    } finally {
-      setSharingImage(false)
-    }
-  }
-
-  async function shareUrl(verdict: string) {
-    if (state.phase !== "done") return
-    setSharingImage(true)
-    try {
-      const blob = await fetchOgBlob(state.user.screen_name)
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = `topbottom-${state.user.screen_name}.png`
-        a.click()
-        URL.revokeObjectURL(url)
-        setTimeout(() => {
-          const text = encodeURIComponent(`${verdict}\n\n${window.location.origin}/analyzer/${state.user.screen_name}`)
-          window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank")
-        }, 300)
-      }
-    } finally {
-      setSharingImage(false)
-    }
-  }
-
-  const showForm = state.phase === "idle" || state.phase === "done" || state.phase === "error" || state.phase === "confirming" || state.phase === "queue" || state.phase === "processing"
+const showForm = state.phase === "idle" || state.phase === "done" || state.phase === "error" || state.phase === "confirming" || state.phase === "queue" || state.phase === "processing"
 
   return (
     <main className="page">
@@ -259,8 +201,15 @@ function AnalyzerInner() {
       <div className="wrap">
 
         <header className="header">
-          <span className="mono dim">настоящий анализ</span>
-          <span className="mono dim">2026</span>
+          <p className="mono" style={{color: "#f0f0f0", margin: 0}}>
+            подпишись{" "}
+            <a href="https://x.com/0x3654" target="_blank" rel="noopener noreferrer" className="link-accent" style={{textTransform: "none"}}>
+              @0x3654
+            </a>
+          </p>
+          <a href="https://x.com/0x3654" target="_blank" rel="noopener noreferrer" className="mono link-dim">
+            обратная связь →
+          </a>
         </header>
 
         {apiStatus !== "ok" && apiStatus !== "unknown" && (
@@ -292,6 +241,7 @@ function AnalyzerInner() {
                 onChange={(e) => {
                   setUsername(e.target.value)
                   setProfileChecked(false)
+                  if (state.phase === "done") setState({ phase: "idle" })
                 }}
                 placeholder="profile"
                 autoComplete="off"
@@ -351,19 +301,16 @@ function AnalyzerInner() {
             </div>
             <p className="headline" style={{ fontSize: "clamp(2.5rem, 12vw, 4.5rem)", marginBottom: "1rem" }}>топ или<br /><em>боттом?</em></p>
             <p className="mono dim result-label">вердикт</p>
-            <p className="verdict">{state.verdict}</p>
-            <div className="actions">
-              <button className="btn btn-icon" onClick={saveImage} disabled={sharingImage} title="сохранить картинку">
-                {sharingImage ? "…" : (
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                )}
-              </button>
-              <button className="btn btn-accent" onClick={() => shareUrl(state.verdict)} disabled={sharingImage}>
-                {sharingImage ? "делаю картинку..." : "поделиться →"}
-              </button>
-            </div>
+            <p className="verdict">
+              {(() => {
+                const nl = state.verdict.indexOf("\n")
+                if (nl === -1) return state.verdict
+                return <>
+                  <span className="verdict-headline">{state.verdict.slice(0, nl)}</span>
+                  {state.verdict.slice(nl)}
+                </>
+              })()}
+            </p>
           </div>
         )}
 
@@ -374,19 +321,7 @@ function AnalyzerInner() {
           </div>
         )}
 
-        <div className="follow">
-          <p className="mono" style={{color: "#f0f0f0"}}>
-            подпишись {" "}
-            <a href="https://x.com/0x3654" target="_blank" rel="noopener noreferrer" className="link-accent" style={{textTransform: "none"}}>
-              @0x3654
-            </a>
-          </p>
-          <a href="https://x.com/0x3654" target="_blank" rel="noopener noreferrer" className="mono link-dim">
-            обратная связь →
-          </a>
-        </div>
-
-        <footer className="footer">
+<footer className="footer">
           <span className="mono dim">© 2026</span>
           <a href="https://github.com/0x3654/dumbtests" target="_blank" rel="noopener noreferrer" className="mono dim" style={{ textDecoration: "none" }}>opensource</a>
           <span className="mono dim">не связан с x/twitter</span>
@@ -571,6 +506,12 @@ function AnalyzerInner() {
           margin-bottom: 1.5rem;
           white-space: pre-line;
         }
+        .verdict-headline {
+          display: block;
+          font-size: 1.2rem;
+          font-weight: 700;
+          color: #ff6b35;
+        }
         .actions {
           display: flex;
           gap: 0.5rem;
@@ -616,15 +557,7 @@ function AnalyzerInner() {
           margin-bottom: 1rem;
           line-height: 1.6;
         }
-        .follow {
-          margin-top: 3rem;
-          border-top: 1px solid #2a2a2a;
-          padding-top: 1rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .link-accent { color: #ff6b35; text-decoration: none; }
+.link-accent { color: #ff6b35; text-decoration: none; }
         .link-accent:hover { text-decoration: underline; }
         .link-dim { color: #f0f0f0; text-decoration: none; }
         .link-dim:hover { color: #fff; }

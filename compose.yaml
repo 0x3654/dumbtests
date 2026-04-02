@@ -12,8 +12,6 @@ services:
     depends_on:
       - analyzer
       - redis
-    networks:
-      - backend
 
   analyzer:
     container_name: analyzer
@@ -27,8 +25,6 @@ services:
       - redis
     volumes:
       - ./tweet_data:/data
-    networks:
-      - backend
 
   redis:
     container_name: redis
@@ -36,8 +32,6 @@ services:
     restart: always
     volumes:
       - redis_data:/data
-    networks:
-      - backend
 
 networks:
   backend:

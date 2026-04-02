@@ -1,4 +1,4 @@
-# топ или боттом?
+# Глупенькие тесты
 
 [![Web](https://github.com/0x3654/dumbtests/actions/workflows/build-web.yml/badge.svg)](https://github.com/0x3654/dumbtests/actions/workflows/build-web.yml)
 [![Analyzer](https://github.com/0x3654/dumbtests/actions/workflows/build-analyzer.yml/badge.svg)](https://github.com/0x3654/dumbtests/actions/workflows/build-analyzer.yml)
@@ -7,11 +7,19 @@
 [![multi-arch](https://img.shields.io/badge/arch-amd64%20%7C%20arm64-green)](https://hub.docker.com/u/0x3654)
 [![Last commit](https://img.shields.io/github/last-commit/0x3654/dumbtests)](https://github.com/0x3654/dumbtests/commits/main)
 
+## Топ или боттом?
 Реальный анализ. Не рандом.
-
-Читает последние 20 твитов, смотрит картинки, использует ИИ. Каждый результат уникален — в отличие от сайтов которые делают `hash(username) % 13`.
+Читает последние 20 твитов, смотрит картинки, использует ИИ. Каждый результат уникален и кешируется на 7 дней.
 
 **→ [0x3654.com/topbottom](https://0x3654.com/topbottom)**
+
+<p>
+  <img src="docs/screenshot.png" alt="elonmusk" width="280">
+  <img src="docs/screenshot-obama.png" alt="barackobama" width="280">
+  <img src="docs/screenshot-trump.png" alt="realdonaldtrump" width="280">
+  <img src="docs/screenshot-nasa.png" alt="nasa" width="280">
+  <img src="docs/screenshot-rihanna.png" alt="rihanna" width="280">
+</p>
 
 ---
 
@@ -37,6 +45,32 @@
 | AI | GLM-4V (vision + текст) |
 | Twitter | внутренний GraphQL API (cookies) |
 | Деплой | Docker Compose, nginx |
+
+## Экран недоступности
+
+<img src="docs/crash.png" alt="сервис недоступен" width="280">
+
+Показывается когда:
+- аналайзер не отвечает (`unavailable`)
+- закончился баланс AI API (`no_funds`)
+- не задан API ключ (`no_key`)
+
+---
+
+## Twitter cookies (Safari на Mac)
+
+Без cookies сервис не может читать твиты. Нужны два значения из браузера:
+
+1. Открой [x.com](https://x.com) и залогинься
+2. В меню: **Develop → Show Web Inspector** (если нет — включи в Safari → Settings → Advanced → Show Develop menu)
+3. Вкладка **Storage → Cookies → https://x.com**
+4. Найди и скопируй:
+   - `auth_token` → `TWITTER_AUTH_TOKEN` в `.env`
+   - `ct0` → `TWITTER_CT0` в `.env`
+
+> Cookies привязаны к сессии. Если выйдешь из аккаунта — нужно обновить.
+
+---
 
 ## Запуск локально
 

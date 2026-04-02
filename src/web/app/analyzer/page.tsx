@@ -213,10 +213,13 @@ const showForm = state.phase === "idle" || state.phase === "done" || state.phase
         </header>
 
         {apiStatus !== "ok" && apiStatus !== "unknown" && (
-          <div className="api-status">
-            {apiStatus === "no_funds" && "сервис временно не работает — закончился баланс апи"}
-            {apiStatus === "no_key" && "сервис не настроен — нет апи ключа"}
-            {apiStatus === "unavailable" && "сервис недоступен"}
+          <div className="unavailable-overlay">
+            <p className="headline" style={{ color: "#fff", marginBottom: "1.5rem" }}>
+              {apiStatus === "no_funds" && <><em>закончились</em><br />деньги</>}
+              {apiStatus === "no_key" && <>нет<br /><em>апи ключа</em></>}
+              {apiStatus === "unavailable" && <>сервис<br /><em>недоступен</em></>}
+            </p>
+            <img src={`${BASE}/unavailable.png`} alt="" className="unavailable-img" />
           </div>
         )}
 
@@ -339,6 +342,7 @@ const showForm = state.phase === "idle" || state.phase === "done" || state.phase
           justify-content: center;
           padding: 2rem 1.25rem;
           font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          position: relative;
         }
         .wrap {
           width: 100%;
@@ -396,12 +400,21 @@ const showForm = state.phase === "idle" || state.phase === "done" || state.phase
           margin-top: 0.25rem;
           color: #f0f0f0;
         }
-        .api-status {
-          font-size: 0.7rem;
-          color: #ff6b35;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          margin-bottom: 1rem;
+        .unavailable-overlay {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          z-index: 10;
+          padding: 2rem;
+          text-align: center;
+          backdrop-filter: blur(4.4px);
+          background: rgba(26, 26, 26, 0.4);
+        }
+        .unavailable-img {
+          width: min(640px, 95vw);
         }
         .headline {
           font-family: 'Caveat', cursive;

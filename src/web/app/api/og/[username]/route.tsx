@@ -35,7 +35,8 @@ export async function GET(
     readFile(path.join(fontsDir, "caveat.ttf")).catch(() => null),
   ])
 
-  const siteUrl = SITE_URL || req.nextUrl.origin
+  const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH ?? "/topbottom"
+  const siteUrl = (SITE_URL || req.nextUrl.origin) + BASE_PATH
 
   // Scale factor: html2canvas card is 600px wide, OG is 1200px → scale ×2
   return new ImageResponse(
@@ -51,12 +52,12 @@ export async function GET(
           fontFamily: "Inter, sans-serif",
         }}
       >
-        {/* Title — matches html2canvas: Caveat 42px → 84px */}
-        <div style={{ display: "flex", marginBottom: "48px", lineHeight: 1 }}>
-          <span style={{ fontFamily: "Caveat", fontSize: "84px", fontWeight: 700, color: "#555" }}>
-            {"топ или "}
+        {/* Title */}
+        <div style={{ display: "flex", flexDirection: "column", marginBottom: "32px", lineHeight: 0.95 }}>
+          <span style={{ fontFamily: "Caveat", fontSize: "64px", fontWeight: 700, color: "#555" }}>
+            {"топ или"}
           </span>
-          <span style={{ fontFamily: "Caveat", fontSize: "84px", fontWeight: 700, color: "#ff6b35" }}>
+          <span style={{ fontFamily: "Caveat", fontSize: "64px", fontWeight: 700, color: "#ff6b35" }}>
             {"боттом?"}
           </span>
         </div>

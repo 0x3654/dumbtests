@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 
-const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? ""
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "/topbottom"
 
 const STEPS = [
   "Читаю твиты...",
@@ -259,7 +259,7 @@ function AnalyzerInner() {
       <div className="wrap">
 
         <header className="header">
-          <a href="https://0x3654.com/toporbottom" className="mono dim" style={{ textDecoration: "none" }}>настоящий анализ</a>
+          <span className="mono dim">настоящий анализ</span>
           <span className="mono dim">2026</span>
         </header>
 
@@ -272,7 +272,7 @@ function AnalyzerInner() {
         )}
 
         <h1 className="headline">
-          топ или<br /><em>боттом?</em>
+          <a href={`${process.env.NEXT_PUBLIC_SITE_URL ?? ""}${BASE}`} style={{ color: "inherit", textDecoration: "none" }}>топ или<br /><em>боттом?</em></a>
         </h1>
 
         <p className="deck">
@@ -281,8 +281,9 @@ function AnalyzerInner() {
 
 
         {showForm && (
-          <form onSubmit={handleSubmit} className="form">
+          <form onSubmit={handleSubmit} className="form" autoComplete="off">
             <div className="input-row">
+              <input type="text" autoComplete="username" style={{ position: "absolute", opacity: 0, height: 0, width: 0, pointerEvents: "none" }} readOnly tabIndex={-1} />
               <span className="at">@</span>
               <input
                 className="field"
@@ -292,7 +293,7 @@ function AnalyzerInner() {
                   setUsername(e.target.value)
                   setProfileChecked(false)
                 }}
-                placeholder="username"
+                placeholder="profile"
                 autoComplete="off"
                 spellCheck={false}
                 disabled={state.phase === "queue" || state.phase === "processing"}
@@ -474,6 +475,7 @@ function AnalyzerInner() {
           line-height: 0.95;
           color: #fff;
           margin-bottom: 2rem;
+          text-align: center;
         }
         .headline em {
           font-style: normal;

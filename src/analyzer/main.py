@@ -50,7 +50,6 @@ async def worker():
             cached = await get_cached(username)
             if cached:
                 job_results[job_id] = {"status": "done", "verdict": cached, "cached": True, "position": 0}
-                job_queue.task_done()
                 continue
 
             # 2. Файловый кэш твитов
